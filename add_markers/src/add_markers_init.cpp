@@ -31,7 +31,6 @@
 // %Tag(INCLUDES)%
 #include <ros/ros.h>
 #include <visualization_msgs/Marker.h>
-#include "nav_msgs/Odometry.h"
 #include <math.h>
 // %EndTag(INCLUDES)%
 
@@ -56,7 +55,7 @@ int main( int argc, char** argv )
   ros::NodeHandle n;
   ros::Rate r(1);
   ros::Publisher marker_pub = n.advertise<visualization_msgs::Marker>("visualization_marker", 1);
-  ros::Subscriber odom_subscriber = n.subscribe("/odom", 500, callback_odom);
+
 // %EndTag(INIT)%
 
   // Set our initial shape type to be a cube
@@ -83,10 +82,6 @@ int main( int argc, char** argv )
     marker.type = shape;
 // %EndTag(TYPE)%
 
-    // Set the marker action.  Options are ADD, DELETE, and new in ROS Indigo: 3 (DELETEALL)
-// %Tag(ACTION)%
-    marker.action = visualization_msgs::Marker::ADD;
-// %EndTag(ACTION)%
 
     // Set the pose of the marker.  This is a full 6DOF pose relative to the frame/time specified in the header
 // %Tag(POSE)%
@@ -118,7 +113,7 @@ int main( int argc, char** argv )
     marker.lifetime = ros::Duration();
 // %EndTag(LIFETIME)%
 
-while (ros::ok() && !(pickup && dropoff)){
+while (ros::ok()){
 
     // Publish the marker
 // %Tag(PUBLISH)%
@@ -131,14 +126,20 @@ while (ros::ok() && !(pickup && dropoff)){
       ROS_WARN_ONCE("Please create a subscriber to the marker");
       sleep(1);
     }
+    // Set the marker action.  Options are ADD, DELETE, and new in ROS Indigo: 3 (DELETEALL)
+// %Tag(ACTION)%
+    marker.action = visualization_msgs::Marker::ADD;
+// %EndTag(ACTION)%
+   marker_pub.publish(marker);
 	
    pickup = true;
    ros::Duration(5.0).sleep();
 
    if(pickup){
 	marker.action = visualization_msgs::Marker::DELETE;
-      	ros::Duration(5.0).sleep();
+	marker_pub.publish(marker);
 	ROS_INFO("Object picked up!");
+	ros::Duration(5.0).sleep();
         dropoff = true;
         pickup = false;
    }
@@ -146,17 +147,17 @@ while (ros::ok() && !(pickup && dropoff)){
       	marker.pose.position.x = dropoffx;
       	marker.pose.position.y = dropoffy;
       	marker.action = visualization_msgs::Marker::ADD;
-      	ros::Duration(5.0).sleep();
 	ROS_INFO("Object dropped off!");
+	marker_pub.publish(marker);
+      	ros::Duration(5.0).sleep();
 	pickup = true;
 
    }
-
+    marker.action = visualization_msgs::Marker::DELETE;
     marker_pub.publish(marker);
-    ros::spinOnce();
 // %EndTag(PUBLISH)%
-
-  }
+  return 0;
+  }	
 // %EndTag(SLEEP_END)%
 }
 // %EndTag(FULLTEXT)%
